@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pokétto Manager</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <style>
+      /* Target the card image to apply the scale effect */
+      .pokemon-card img {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+      }
+
+      /* Scale and shadow effect only for the image inside the card */
+      .pokemon-card:hover img {
+        transform: scale(1.1); /* Scale the image only */
+        box-shadow: 0px 0px 0px rgba(0, 0, 0, 0.3); /* Add shadow around the image */
+      }
+    </style>
+  </head>
+
+  <body
+    class="bg-gray-900 font-sans"
+    style="
+      background: rgb(177, 179, 253);
+      background: linear-gradient(
+        164deg,
+        rgba(177, 179, 253, 1) 15%,
+        rgba(200, 236, 244, 1) 45%,
+        rgba(193, 116, 252, 1) 66%,
+        rgba(112, 134, 255, 1) 91%
+      );
+    "
+  >
+    <div class="container mx-auto p-8">
+      <h1
+        class="text-5xl font-bold text-center mb-8 shadow-lg"
+        style="color: #cfffff"
+      >
+        Pokétto Wizard
+      </h1>
+
+      <!-- Barra de búsqueda -->
+      <div class="mb-6 relative">
+        <input
+          type="text"
+          id="searchBar"
+          placeholder="Buscar cartas Pokémon..."
+          class="w-full p-3 rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-yellow-400"
+        />
+        <!-- Clear X button -->
+        <button
+          id="clearSearch"
+          class="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-700"
+          style="font-size: 1.5rem; visibility: hidden"
+        >
+          &#10005;
+        </button>
+      </div>
+
+      <!-- Galería de cartas -->
+      <div
+        id="cardGallery"
+        class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6"
+      ></div>
+
+      <!-- Dropdown de Common Decks -->
+      <div class="bg-gray-800 p-6 rounded-lg shadow-lg mb-6">
+        <label for="commonDecks" class="text-yellow-400 font-bold text-lg"
+          >Common Decks</label
+        >
+        <select id="commonDecks" class="w-full p-2 rounded-lg mt-2 text-black">
+          <option value="">Choose a Deck...</option>
+          <option value="MewtwoEX">Mewtwo EX</option>
+          <option value="PikachuEX">Pikachu EX</option>
+          <!-- Puedes añadir más opciones aquí -->
+        </select>
+      </div>
+
+      <!-- Mostrar cartas seleccionadas -->
+      <div class="bg-gray-800 p-6 rounded-lg shadow-lg mb-6">
+        <h2 class="text-2xl font-bold text-yellow-400 mb-4">
+          Cartas Seleccionadas
+        </h2>
+        <div id="selectedCardsContainer" class="flex flex-wrap gap-4"></div>
+      </div>
+
+      <!-- Guardar y cargar archivo .poketto -->
+      <div
+        class="bg-gray-800 p-6 rounded-lg shadow-lg mb-6 flex flex-col items-start"
+      >
+        <input
+          type="text"
+          id="fileName"
+          placeholder="Nombre del archivo"
+          class="border border-gray-600 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-yellow-400 mb-4 w-full text-black"
+        />
+
+        <div class="flex flex-col space-y-4 w-full">
+          <button
+            id="savePoketto"
+            class="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 px-4 rounded-lg shadow-lg transition duration-300 w-full"
+          >
+            Guardar archivo .poketto
+          </button>
+
+          <input
+            type="file"
+            id="loadPoketto"
+            accept=".poketto"
+            class="block w-full text-sm text-gray-500 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-yellow-600 file:text-white hover:file:bg-yellow-700"
+          />
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let selectedCards = [];
+
+      // Arrays with Pokémon names (replace with your full list as needed)
+      const geneticapex = [
+        "Bulbasaur",
+        "Ivysaur",
+        "Venusaur",
+        "Venusaur-EX",
+        "Caterpie",
+        "Metapod",
+        "Butterfree",
+        "Weedle",
+        "Kakuna",
+        "Beedrill",
+        "Oddish",
+        "Gloom",
+        "Vileplume",
+        "Paras",
+        "Parasect",
+        "Venonat",
+        "Venomoth",
+        "Bellsprout",
+        "Weepinbell",
+        "Victreebel",
+        "Exeggcute",
+        "Exeggutor",
+        "Exeggutor-EX",
+        "Tangela",
+        "Scyther",
+        "Pinsir",
+        "Cottonee",
+        "Whimsicott",
+        "Petilil",
+        "Lilligant",
+        "Skiddo",
+        "Gogoat",
+        "Charmander",
+        "Charmeleon",
+        "Charizard",
+        "Charizard-EX",
+        "Vulpix",
+        "Ninetales",
+        "Growlithe",
+        "Arcanine",
+        "Arcanine-EX",
+        "Ponyta",
+        "Rapidash",
+        "Magmar",
+        "Flareon",
+        "Moltres",
+        "Moltres-EX",
+        "Heatmor",
+        "Salandit",
+        "Salazzle",
+        "Sizzlipede",
+        "Centiskorch",
+        "Squirtle",
+        "Wartortle",
+        "Blastoise",
+        "Blastoise-EX",
+        "Psyduck",
+        "Golduck",
+        "Poliwag",
+        "Poliwhirl",
+        "Poliwrath",
+        "Tentacool",
+        "Tentacruel",
+        "Seel",
+        "Dewgong",
+        "Shellder",
+        "Cloyster",
+        "Krabby",
+        "Kingler",
+        "Horsea",
+        "Seadra",
+        "Goldeen",
+        "Seaking",
+        "Staryu",
+        "Starmie",
+        "Starmie-EX",
+        "Magikarp",
+        "Gyarados",
+        "Lapras",
+        "Vaporeon",
+        "Omanyte",
+        "Omastar",
+        "Articuno",
+        "Articuno-EX",
+        "Ducklett",
+        "Swanna",
+        "Froakie",
+        "Frogadier",
+        "Greninja",
+        "Pyukumuku",
+        "Bruxish",
+        "Snom",
+        "Frosmoth",
+        "Pikachu",
+        "Raichu",
+        "Pikachu-EX",
+        "Magnemite",
+        "Magneton",
+        "Voltorb",
+        "Electrode",
+        "Electabuzz",
+        "Jolteon",
+        "Zapdos",
+        "Zapdos-EX",
+        "Blitzle",
+        "Zebstrika",
+        "Tynamo",
+        "Eelektrik",
+        "Eelektross",
+        "Helioptile",
+        "Heliolisk",
+        "Pincurchin",
+        "Clefairy",
+        "Clefable",
+        "Abra",
+        "Kadabra",
+        "Alakazam",
+        "Slowpoke",
+        "Slowbro",
+        "Gastly",
+        "Haunter",
+        "Gengar",
+        "Gengar-EX",
+        "Drowzee",
+        "Hypno",
+        "Mr. Mime",
+        "Jynx",
+        "Mewtwo",
+        "Mewtwo-EX",
+        "Ralts",
+        "Kirlia",
+        "Gardevoir",
+        "Woobat",
+        "Swoobat",
+        "Golett",
+        "Golurk",
+        "Sandshrew",
+        "Sandslash",
+        "Diglett",
+        "Dugtrio",
+        "Mankey",
+        "Primeape",
+        "Machop",
+        "Machoke",
+        "Machamp",
+        "Machamp-EX",
+        "Geodude",
+        "Graveler",
+        "Golem",
+        "Onix",
+        "Cubone",
+        "Marowak",
+        "Marowak-EX",
+        "Hitmonlee",
+        "Hitmonchan",
+        "Rhyhorn",
+        "Rhydon",
+        "Kabuto",
+        "Kabutops",
+        "Mienfoo",
+        "Mienshao",
+        "Clobbopus",
+        "Grapploct",
+        "Ekans",
+        "Arbok",
+        "Nidoran♀",
+        "Nidorina",
+        "Nidoqueen",
+        "Nidoran♂",
+        "Nidorino",
+        "Nidoking",
+        "Zubat",
+        "Golbat",
+        "Grimer",
+        "Muk",
+        "Koffing",
+        "Weezing",
+        "Mawile",
+        "Pawniard",
+        "Bisharp",
+        "Meltan",
+        "Melmetal",
+        "Dratini",
+        "Dragonair",
+        "Dragonite",
+        "Pidgey",
+        "Pidgeotto",
+        "Pidgeot",
+        "Rattata",
+        "Raticate",
+        "Spearow",
+        "Fearow",
+        "Jigglypuff",
+        "Wigglytuff",
+        "Wigglytuff-EX",
+        "Meowth",
+        "Persian",
+        "Farfetch'd",
+        "Doduo",
+        "Dodrio",
+        "Lickitung",
+        "Chansey",
+        "Kangaskhan",
+        "Tauros",
+        "Ditto",
+        "Eevee",
+        "Eevee",
+        "Eevee",
+        "Porygon",
+        "Aerodactyl",
+        "Snorlax",
+        "Minccino",
+        "Cinccino",
+        "Wooloo",
+        "Dubwool",
+        "Helix Fossil",
+        "Dome Fossil",
+        "Old Amber",
+        "Erika",
+        "Misty",
+        "Blaine",
+        "Koga",
+        "Giovanni",
+        "Brock",
+        "Sabrina",
+        "Lt. Surge",
+        "Bulbasaur",
+        "Gloom",
+        "Pinsir",
+        "Charmander",
+        "Rapidash",
+        "Squirtle",
+        "Gyarados",
+        "Lapras",
+        "Electrode",
+        "Alakazam",
+        "Slowpoke",
+        "Diglett",
+        "Cubone",
+        "Nidoqueen",
+        "Nidoking",
+        "Golbat",
+        "Weezing",
+        "Dragonite",
+        "Pidgeot",
+        "Meowth",
+        "Ditto",
+        "Eevee",
+        "Porygon",
+        "Snorlax",
+        "Venusaur-EX",
+        "Exeggutor-EX",
+        "Charizard-EX",
+        "Arcanine-EX",
+        "Moltres-EX",
+        "Blastoise-EX",
+        "Starmie-EX",
+        "Articuno-EX",
+        "Pikachu-EX",
+        "Zapdos-EX",
+        "Gengar-EX",
+        "Mewtwo-EX",
+        "Machamp-EX",
+        "Marowak-EX",
+        "Wigglytuff-EX",
+        "Erika",
+        "Misty",
+        "Blaine",
+        "Koga",
+        "Giovanni",
+        "Brock",
+        "Sabrina",
+        "Lt. Surge",
+        "Moltres-EX",
+        "Articuno-EX",
+        "Zapdos-EX",
+        "Gengar-EX",
+        "Machamp-EX",
+        "Wigglytuff-EX",
+        "Charizard-EX",
+        "Pikachu-EX",
+        "Mewtwo-EX",
+        "Mew",
+        "Charizard-EX",
+        "Pikachu-EX",
+        "Mewtwo-EX",
+
+        // Add more Pokémon names here
+      ];
+
+      const promo_a = [
+        "Potion",
+        "X Speed",
+        "Hand Scope",
+        "Pokedex",
+        "Poke Ball",
+        "Red Card",
+        "Professor's Research",
+        "----",
+        "Pikachu",
+        "Mewtwo",
+        "Chansey",
+        "Meowth",
+        "Butterfree",
+        "Lapras-EX",
+        "Pikachu",
+        "Clefairy",
+        "Mankey",
+        "Venusaur",
+        "Greninja",
+        "Haunter",
+        "Onix",
+        "Jigglypuff",
+        "Bulbasaur",
+        "Magnemite",
+      ];
+
+      // Example array with 286 Pokémon cards
+      const geneticapexCards = Array.from({ length: 286 }, (_, i) => ({
+        name: geneticapex[i % geneticapex.length],
+        image: `https://www.serebii.net/tcgpocket/geneticapex/${i + 1}.jpg`,
+      }));
+
+      // Example array with 24 PROMO A cards
+      const promoACards = Array.from({ length: 24 }, (_, i) => {
+        // Skip the 8th card (index 7)
+        if (i === 7) {
+          return null; // Skip the 8th card
+        }
+        return {
+          name: promo_a[i % promo_a.length],
+          image: `https://www.serebii.net/tcgpocket/promo-a/${i + 1}.jpg`,
+        };
+      }).filter((card) => card !== null); // Remove the skipped card from the array
+
+      // Function to render the gallery of Pokémon cards
+      function renderPokemonGallery(filteredCards) {
+        const gallery = document.getElementById("cardGallery");
+        gallery.innerHTML = ""; // Clear previous content
+
+        // Render geneticapex cards
+        filteredCards.forEach((card) => {
+          const cardDiv = createCard(card);
+          gallery.appendChild(cardDiv);
+        });
+
+        // Render promo cards below geneticapex cards
+        promoACards.forEach((card) => {
+          const cardDiv = createCard(card);
+          gallery.appendChild(cardDiv);
+        });
+      }
+
+      // Helper function to create card elements
+      function createCard(card) {
+        const cardDiv = document.createElement("div");
+        cardDiv.classList.add("pokemon-card");
+        cardDiv.setAttribute("data-name", card.name);
+        cardDiv.setAttribute("data-image", card.image);
+
+        const innerDiv = document.createElement("div");
+        innerDiv.classList.add("flex", "flex-col", "items-center");
+
+        const imgElem = document.createElement("img");
+        imgElem.src = card.image;
+        imgElem.alt = card.name;
+        imgElem.classList.add(
+          "w-64",
+          "h-64",
+          "object-contain",
+          "rounded-lg",
+          "cursor-pointer"
+        );
+
+        const nameElem = document.createElement("p");
+        nameElem.textContent = card.name;
+        nameElem.classList.add(
+          "text-center",
+          "text-black-400",
+          "font-bold",
+          "underline",
+          "mt-2"
+        );
+
+        // Add click event to add the card to selected cards
+        imgElem.addEventListener("click", () => addToSelectedCards(card));
+
+        innerDiv.appendChild(imgElem);
+        innerDiv.appendChild(nameElem);
+        cardDiv.appendChild(innerDiv);
+        return cardDiv;
+      }
+
+      // Function to filter cards based on search input
+      function filterCards(searchTerm) {
+        const filteredCards = geneticapexCards.filter((card) =>
+          card.name.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+
+        renderPokemonGallery(filteredCards);
+      }
+
+      // Function to add a card to the selectedCards array and display it
+      function addToSelectedCards(card) {
+        if (selectedCards.length >= 20) {
+          showCustomMessage(
+            "You can only select up to 20 cards for a deck.",
+            "error"
+          );
+          return; // Prevent adding more cards if the limit is reached
+        }
+
+        const cardCount = selectedCards.filter(
+          (c) => c.name === card.name
+        ).length;
+
+        if (cardCount >= 4) {
+          showCustomMessage(
+            "You can only select up to 4 of the same card in a deck.",
+            "error"
+          );
+          return; // Prevent adding the card if the limit is exceeded
+        }
+
+        selectedCards.push(card);
+        displaySelectedCards();
+      }
+
+      // Function to display selected cards with "X" button to remove them
+      function displaySelectedCards() {
+        const container = document.getElementById("selectedCardsContainer");
+        container.innerHTML = ""; // Clear previous content
+
+        selectedCards.forEach((card, index) => {
+          const cardDiv = document.createElement("div");
+          cardDiv.classList.add(
+            "selected-card",
+            "bg-white",
+            "p-2",
+            "rounded-lg",
+            "shadow-md",
+            "flex",
+            "flex-col",
+            "items-center",
+            "relative"
+          );
+
+          const imgElem = document.createElement("img");
+          imgElem.src = card.image;
+          imgElem.alt = card.name;
+          imgElem.classList.add("w-24", "h-24", "object-cover", "rounded");
+
+          const nameElem = document.createElement("p");
+          nameElem.textContent = card.name;
+          nameElem.classList.add("text-sm", "font-semibold", "mt-2");
+
+          const removeButton = document.createElement("button");
+          removeButton.innerHTML = "&#10005;";
+          removeButton.classList.add(
+            "absolute",
+            "top-1",
+            "right-1",
+            "text-red-500",
+            "hover:text-red-700",
+            "text-lg",
+            "font-bold",
+            "focus:outline-none"
+          );
+
+          removeButton.addEventListener("click", () => {
+            selectedCards.splice(index, 1);
+            displaySelectedCards();
+          });
+
+          cardDiv.appendChild(imgElem);
+          cardDiv.appendChild(nameElem);
+          cardDiv.appendChild(removeButton);
+          container.appendChild(cardDiv);
+        });
+      }
+
+      // Function to show custom error/success messages
+      function showCustomMessage(message, type) {
+        const messageContainer = document.createElement("div");
+        messageContainer.classList.add(
+          "fixed",
+          "top-4",
+          "left-1/2",
+          "transform",
+          "-translate-x-1/2",
+          "bg-white",
+          "p-4",
+          "rounded-lg",
+          "shadow-lg",
+          "z-50",
+          "w-80",
+          "text-center",
+          "font-semibold"
+        );
+        messageContainer.style.background =
+          "linear-gradient(164deg, rgba(177, 179, 253, 1) 15%, rgba(200, 236, 244, 1) 45%, rgba(193, 116, 252, 1) 66%, rgba(112, 134, 255, 1) 91%)";
+        messageContainer.style.color = "#000000"; // Set text color to white for better contrast
+
+        messageContainer.textContent = message;
+        document.body.appendChild(messageContainer);
+
+        setTimeout(() => {
+          messageContainer.remove();
+        }, 4000);
+      }
+
+      // Event listener for search bar
+      const searchBar = document.getElementById("searchBar");
+      const clearSearchButton = document.getElementById("clearSearch");
+
+      searchBar.addEventListener("input", () => {
+        const searchTerm = searchBar.value.trim();
+
+        if (searchTerm) {
+          clearSearchButton.style.visibility = "visible"; // Show clear button
+          filterCards(searchTerm);
+        } else {
+          clearSearchButton.style.visibility = "hidden"; // Hide clear button
+          renderPokemonGallery(geneticapexCards); // Show all cards
+        }
+      });
+
+      // Event listener for clearing search
+      clearSearchButton.addEventListener("click", () => {
+        searchBar.value = "";
+        clearSearchButton.style.visibility = "hidden"; // Hide clear button
+        renderPokemonGallery(geneticapexCards); // Show all cards
+      });
+
+      // Guardar cartas seleccionadas como archivo .poketto
+      document.getElementById("savePoketto").addEventListener("click", () => {
+        const fileName =
+          document.getElementById("fileName").value || "cartas_seleccionadas";
+        const pokettoData = JSON.stringify(selectedCards);
+        const blob = new Blob([pokettoData], {
+          type: "application/octet-stream",
+        });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${fileName}.poketto`;
+        a.click();
+      });
+
+      // Cargar cartas desde archivo .poketto
+      document
+        .getElementById("loadPoketto")
+        .addEventListener("change", (event) => {
+          const file = event.target.files[0];
+          if (file) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+              selectedCards = JSON.parse(e.target.result);
+              displaySelectedCards();
+            };
+            reader.readAsText(file);
+          }
+        });
+
+      // Referencia al dropdown de Common Decks
+      document
+        .getElementById("commonDecks")
+        .addEventListener("change", (event) => {
+          const selectedDeck = event.target.value;
+
+          // Limpia las cartas seleccionadas
+          selectedCards = [];
+
+          // Dependiendo de la opción seleccionada, agregar cartas al array
+          if (selectedDeck === "MewtwoEX") {
+            selectedCards.push(
+              {
+                name: "Mewtwo-EX",
+                image: "https://www.serebii.net/tcgpocket/geneticapex/129.jpg",
+              },
+              {
+                name: "Mewtwo-EX",
+                image: "https://www.serebii.net/tcgpocket/geneticapex/129.jpg",
+              },
+              {
+                name: "Ralts",
+                image: "https://www.serebii.net/tcgpocket/geneticapex/130.jpg",
+              },
+              {
+                name: "Ralts",
+                image: "https://www.serebii.net/tcgpocket/geneticapex/130.jpg",
+              },
+              {
+                name: "Kirlia",
+                image: "https://www.serebii.net/tcgpocket/geneticapex/131.jpg",
+              },
+              {
+                name: "Kirlia",
+                image: "https://www.serebii.net/tcgpocket/geneticapex/131.jpg",
+              },
+              {
+                name: "Gardevoir",
+                image: "https://www.serebii.net/tcgpocket/geneticapex/132.jpg",
+              },
+              {
+                name: "Gardevoir ",
+                image: "https://www.serebii.net/tcgpocket/geneticapex/132.jpg",
+              },
+              {
+                name: "Potion ",
+                image: "https://www.serebii.net/tcgpocket/promo-a/1.jpg",
+              },
+              {
+                name: "Potion ",
+                image: "https://www.serebii.net/tcgpocket/promo-a/1.jpg",
+              },
+              {
+                name: "X Speed ",
+                image: "https://www.serebii.net/tcgpocket/promo-a/2.jpg",
+              },
+              {
+                name: "X Speed ",
+                image: "https://www.serebii.net/tcgpocket/promo-a/2.jpg",
+              },
+              {
+                name: "Poke Ball ",
+                image: "https://www.serebii.net/tcgpocket/promo-a/5.jpg",
+              },
+              {
+                name: "Poke Ball ",
+                image: "https://www.serebii.net/tcgpocket/promo-a/5.jpg",
+              },
+              {
+                name: "Red Card ",
+                image: "https://www.serebii.net/tcgpocket/promo-a/6.jpg",
+              },
+              {
+                name: "Professor's Research ",
+                image: "https://www.serebii.net/tcgpocket/promo-a/7.jpg",
+              },
+              {
+                name: "Professor's Research ",
+                image: "https://www.serebii.net/tcgpocket/promo-a/7.jpg",
+              },
+              {
+                name: "Sabrina ",
+                image: "https://www.serebii.net/tcgpocket/geneticapex/225.jpg",
+              },
+              {
+                name: "Giovanni  ",
+                image: "https://www.serebii.net/tcgpocket/geneticapex/223.jpg",
+              },
+              {
+                name: "Giovanni  ",
+                image: "https://www.serebii.net/tcgpocket/geneticapex/223.jpg",
+              }
+            );
+          }
+
+          if (selectedDeck === "PikachuEX") {
+            selectedCards.push(
+              {
+                name: "Pikachu-EX",
+                image: "https://www.serebii.net/tcgpocket/geneticapex/259.jpg",
+              },
+              {
+                name: "Pikachu-EX",
+                image: "https://www.serebii.net/tcgpocket/geneticapex/259.jpg",
+              },
+              {
+                name: "Zapdos-EX",
+                image: "https://www.serebii.net/tcgpocket/geneticapex/260.jpg",
+              },
+              {
+                name: "Zapdos-EX",
+                image: "https://www.serebii.net/tcgpocket/geneticapex/260.jpg",
+              },
+              {
+                name: "Voltorb ",
+                image: "https://www.serebii.net/tcgpocket/geneticapex/99.jpg",
+              },
+              {
+                name: "Voltorb ",
+                image: "https://www.serebii.net/tcgpocket/geneticapex/99.jpg",
+              },
+              {
+                name: "Electrode",
+                image: "https://www.serebii.net/tcgpocket/geneticapex/100.jpg",
+              },
+              {
+                name: "Electrode ",
+                image: "https://www.serebii.net/tcgpocket/geneticapex/100.jpg",
+              },
+              {
+                name: "Potion ",
+                image: "https://www.serebii.net/tcgpocket/promo-a/1.jpg",
+              },
+              {
+                name: "Potion ",
+                image: "https://www.serebii.net/tcgpocket/promo-a/1.jpg",
+              },
+              {
+                name: "X Speed ",
+                image: "https://www.serebii.net/tcgpocket/promo-a/2.jpg",
+              },
+              {
+                name: "X Speed ",
+                image: "https://www.serebii.net/tcgpocket/promo-a/2.jpg",
+              },
+              {
+                name: "Poke Ball ",
+                image: "https://www.serebii.net/tcgpocket/promo-a/5.jpg",
+              },
+              {
+                name: "Poke Ball ",
+                image: "https://www.serebii.net/tcgpocket/promo-a/5.jpg",
+              },
+              {
+                name: "Red Card ",
+                image: "https://www.serebii.net/tcgpocket/promo-a/6.jpg",
+              },
+              {
+                name: "Professor's Research ",
+                image: "https://www.serebii.net/tcgpocket/promo-a/7.jpg",
+              },
+              {
+                name: "Professor's Research ",
+                image: "https://www.serebii.net/tcgpocket/promo-a/7.jpg",
+              },
+              {
+                name: "Sabrina ",
+                image: "https://www.serebii.net/tcgpocket/geneticapex/225.jpg",
+              },
+              {
+                name: "Sabrina ",
+                image: "https://www.serebii.net/tcgpocket/geneticapex/225.jpg",
+              },
+              {
+                name: "Giovanni  ",
+                image: "https://www.serebii.net/tcgpocket/geneticapex/223.jpg",
+              }
+            );
+          }
+
+          // Renderizar las cartas seleccionadas
+          displaySelectedCards();
+        });
+      // Initial render
+      renderPokemonGallery(geneticapexCards);
+    </script>
+  </body>
+</html>
