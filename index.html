@@ -547,6 +547,8 @@
         }
 
         selectedCards.push(card);
+        // Show custom message with card name and count
+        showCustomMessage(`${card.name} added x${cardCount + 1}`, "success");
         displaySelectedCards();
       }
 
