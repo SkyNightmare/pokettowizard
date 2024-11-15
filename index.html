@@ -6,7 +6,6 @@
     <title>Pokétto Manager</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <style>
       /* Target the card image to apply the scale effect */
@@ -457,22 +456,41 @@
         };
       }).filter((card) => card !== null); // Remove the skipped card from the array
 
+      // Combine both arrays into a single array for filtering
+      const allCards = [...geneticapexCards, ...promoACards];
+
       // Function to render the gallery of Pokémon cards
       function renderPokemonGallery(filteredCards) {
         const gallery = document.getElementById("cardGallery");
         gallery.innerHTML = ""; // Clear previous content
 
-        // Render geneticapex cards
-        filteredCards.forEach((card) => {
-          const cardDiv = createCard(card);
-          gallery.appendChild(cardDiv);
-        });
+        // If no cards are found, adjust the gallery layout for centering
+        if (filteredCards.length === 0) {
+          gallery.style.display = "flex"; // Enable flex display
+          gallery.style.justifyContent = "center"; // Center horizontally
+          gallery.style.alignItems = "center"; // Center vertically
+          gallery.style.minHeight = "300px"; // Minimum height to center content
 
-        // Render promo cards below geneticapex cards
-        promoACards.forEach((card) => {
-          const cardDiv = createCard(card);
-          gallery.appendChild(cardDiv);
-        });
+          const noCardMessage = document.createElement("p");
+          noCardMessage.textContent = "NO CARD FOUND";
+          noCardMessage.classList.add("text-center", "font-bold");
+          noCardMessage.style.fontSize = "24px"; // Make the text bigger
+          noCardMessage.style.background =
+            "linear-gradient(164deg, rgba(112, 134, 255, 1) 55%, rgba(193, 116, 252, 1) 65%, rgba(200, 236, 244, 1) 66%, rgb(127, 9, 253) 91%)";
+          noCardMessage.style.webkitBackgroundClip = "text"; // Apply the gradient to the text
+          noCardMessage.style.color = "transparent"; // Make text color transparent so the gradient shows
+          gallery.appendChild(noCardMessage);
+        } else {
+          // Reset the gallery layout to its normal state when cards are present
+          gallery.style.display = "grid"; // Use grid layout
+          gallery.style.gridTemplateColumns = "repeat(4, 1fr)"; // 4 columns for the card layout
+          gallery.style.gridGap = "20px"; // Space between the cards
+
+          filteredCards.forEach((card) => {
+            const cardDiv = createCard(card);
+            gallery.appendChild(cardDiv);
+          });
+        }
       }
 
       // Helper function to create card elements
@@ -506,7 +524,6 @@
           "mt-2"
         );
 
-        // Add click event to add the card to selected cards
         imgElem.addEventListener("click", () => addToSelectedCards(card));
 
         innerDiv.appendChild(imgElem);
@@ -515,9 +532,9 @@
         return cardDiv;
       }
 
-      // Function to filter cards based on search input
+      // Updated function to filter cards based on search input across all cards
       function filterCards(searchTerm) {
-        const filteredCards = geneticapexCards.filter((card) =>
+        const filteredCards = allCards.filter((card) =>
           card.name.toLowerCase().includes(searchTerm.toLowerCase())
         );
 
@@ -647,15 +664,14 @@
           filterCards(searchTerm);
         } else {
           clearSearchButton.style.visibility = "hidden"; // Hide clear button
-          renderPokemonGallery(geneticapexCards); // Show all cards
+          renderPokemonGallery(allCards); // Show all cards
         }
       });
-
       // Event listener for clearing search
       clearSearchButton.addEventListener("click", () => {
         searchBar.value = "";
         clearSearchButton.style.visibility = "hidden"; // Hide clear button
-        renderPokemonGallery(geneticapexCards); // Show all cards
+        renderPokemonGallery(allCards); // Show all cards
       });
 
       // Guardar cartas seleccionadas como archivo .poketto
@@ -871,8 +887,8 @@
           // Renderizar las cartas seleccionadas
           displaySelectedCards();
         });
-      // Initial render
-      renderPokemonGallery(geneticapexCards);
+      // Initial render with all cards
+      renderPokemonGallery(allCards);
     </script>
   </body>
 </html>
