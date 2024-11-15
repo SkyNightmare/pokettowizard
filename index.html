@@ -41,6 +41,43 @@
       >
         Pokétto Wizard
       </h1>
+      <!-- Toggle button below Pokétto Wizard -->
+      <div class="flex justify-center items-center mb-8">
+        <label for="modeToggle" class="mr-4 text-[#333333] font-bold text-lg"
+          >Mode:</label
+        >
+        <button
+          id="modeToggle"
+          class="bg-gradient-to-r from-[#9d9fe9] via-[#b4d8e0] to-[#5c72eb] text-[#333333] font-semibold py-2 px-4 rounded-lg shadow-lg transition duration-300 hover:opacity-90"
+        >
+          ADD
+        </button>
+      </div>
+
+      <!-- Popup for displaying cards in "Display" mode -->
+      <div
+        id="cardPopup"
+        class="fixed inset-0 flex justify-center items-center bg-black bg-opacity-75 hidden z-50"
+      >
+        <div class="p-8 relative">
+          <button
+            id="closePopup"
+            class="absolute top-4 right-2 text-white hover:text-yellow-400 text-2xl font-bold"
+          >
+            &#10005;
+          </button>
+          <img
+            id="popupImage"
+            src=""
+            alt=""
+            class="w-full max-h-[500px] object-contain mb-6"
+          />
+          <p
+            id="popupName"
+            class="text-center text-white font-bold text-2xl"
+          ></p>
+        </div>
+      </div>
 
       <!-- Barra de búsqueda -->
       <div class="mb-6 relative">
@@ -555,9 +592,9 @@
           (c) => c.name === card.name
         ).length;
 
-        if (cardCount >= 4) {
+        if (cardCount >= 2) {
           showCustomMessage(
-            "You can only select up to 4 of the same card in a deck.",
+            "You can only select up to 2 of the same card in a deck.",
             "error"
           );
           return; // Prevent adding the card if the limit is exceeded
@@ -889,6 +926,89 @@
         });
       // Initial render with all cards
       renderPokemonGallery(allCards);
+
+      let isAddMode = true; // Default mode is ADD
+
+      // Reference to the toggle button
+      const modeToggle = document.getElementById("modeToggle");
+
+      // Reference to the popup container and its elements
+      const cardPopup = document.getElementById("cardPopup");
+      const popupImage = document.getElementById("popupImage");
+      const popupName = document.getElementById("popupName");
+      const closePopup = document.getElementById("closePopup");
+
+      // Toggle button event listener
+      modeToggle.addEventListener("click", () => {
+        isAddMode = !isAddMode;
+        modeToggle.textContent = isAddMode ? "ADD" : "DISPLAY";
+      });
+
+      // Function to handle card clicks based on the mode
+      function cardClickHandler(card) {
+        if (isAddMode) {
+          addToSelectedCards(card); // Add card to the deck
+        } else {
+          // Display card in the popup
+          popupImage.src = card.image;
+          popupImage.alt = card.name;
+          popupName.textContent = card.name;
+          cardPopup.classList.remove("hidden");
+        }
+      }
+
+      // Close popup event listener
+      closePopup.addEventListener("click", () => {
+        cardPopup.classList.add("hidden");
+      });
+
+      // Close popup when clicking outside the popup content
+      cardPopup.addEventListener("click", (event) => {
+        // Check if the click target is the cardPopup itself (not its children)
+        if (event.target === cardPopup) {
+          cardPopup.classList.add("hidden");
+        }
+      });
+
+      // Modify the createCard function to use the new click handler
+      function createCard(card) {
+        const cardDiv = document.createElement("div");
+        cardDiv.classList.add("pokemon-card");
+        cardDiv.setAttribute("data-name", card.name);
+        cardDiv.setAttribute("data-image", card.image);
+
+        const innerDiv = document.createElement("div");
+        innerDiv.classList.add("flex", "flex-col", "items-center");
+
+        const imgElem = document.createElement("img");
+        imgElem.src = card.image;
+        imgElem.alt = card.name;
+        imgElem.classList.add(
+          "w-64",
+          "h-64",
+          "object-contain",
+          "rounded-lg",
+          "cursor-pointer"
+        );
+
+        const nameElem = document.createElement("p");
+        nameElem.textContent = card.name;
+        nameElem.classList.add(
+          "text-center",
+          "text-black-400",
+          "font-bold",
+          "underline",
+          "mt-2"
+        );
+
+        // Add click event using the new handler
+        imgElem.addEventListener("click", () => cardClickHandler(card));
+
+        innerDiv.appendChild(imgElem);
+        innerDiv.appendChild(nameElem);
+        cardDiv.appendChild(innerDiv);
+        return cardDiv;
+      }
     </script>
   </body>
 </html>
